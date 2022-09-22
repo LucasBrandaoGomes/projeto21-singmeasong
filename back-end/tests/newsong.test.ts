@@ -67,7 +67,7 @@ describe("Test route POST /recommendations/:id/upvote", () => {
 })
 
 describe("Test route POST /recommendations/:id/downvote", () => {
-    it("Increasing score , return status 200",async () => {
+    it("Decreasing score , return status 200",async () => {
         const newSong = await createNewSong()
         await supertest(app).post('/recommendations').send(newSong);
         const createdSong = await prisma.recommendation.findUnique({where: {name:newSong.name}});
@@ -78,6 +78,36 @@ describe("Test route POST /recommendations/:id/downvote", () => {
 
         expect(result.status).toBe(200)
         expect(scoreUpdate.score).toEqual(score-1)
+    })
+
+    it("Decreasing score until -6 and expected song to be deleted",async () => {
+        const newSong = await createNewSong()
+        await supertest(app).post('/recommendations').send(newSong);
+        const createdSong = await prisma.recommendation.findUnique({where: {name:newSong.name}});
+        const {id, score} = createdSong
+
+        for(let i=1; i<=6;i++){
+            await supertest(app).post(`/recommendations/${id}/downvote`).send(newSong);
+        }
+        
+        const result = await prisma.recommendation.findUnique({where: {name:newSong.name}});
+
+        expect(result).toBeNull()
+    })
+
+    it("Decreasing score until -5 and expected song not to be deleted",async () => {
+        const newSong = await createNewSong()
+        await supertest(app).post('/recommendations').send(newSong);
+        const createdSong = await prisma.recommendation.findUnique({where: {name:newSong.name}});
+        const {id, score} = createdSong
+
+        for(let i=1; i<=5;i++){
+            await supertest(app).post(`/recommendations/${id}/downvote`).send(newSong);
+        }
+        
+        const result = await prisma.recommendation.findUnique({where: {name:newSong.name}});
+
+        expect(result).not.toBeNull()
     })
 
     it("Trying to downvote in a unregistered song, return status 404",async () => {
