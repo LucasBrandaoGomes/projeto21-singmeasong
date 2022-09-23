@@ -1,6 +1,6 @@
 import supertest from "supertest";
 import { createNewSong } from "../factories/newSongFactory";
-import { create15Recommendations } from "../factories/scenarioFactory";
+import { create15Recommendations, create15RecommendationsDiferentScores } from "../factories/scenarioFactory";
 import app from "../src/app";
 import { prisma }  from "../src/database";
 
@@ -45,6 +45,27 @@ describe("Test route GET /recommendations/:id", () => {
         const result = await supertest(app).get(`/recommendations/9999999`)
         
         expect(result.status).toBe(404)
+        
+    })
+})
+
+describe("Test route GET /recommendations/top/:amount", () => {
+    it("Returning amount? recommendations, return 200",async () => {
+        await create15RecommendationsDiferentScores()
+        const amount = 5
+        const result = await supertest(app).get(`/recommendations/top/${amount}`)
+        console.log(result.body)
+        for(let i=0; i<=result.body.length; i++){
+            if(i<result.body.length-1){
+                expect(result.body[i].score).toBeGreaterThanOrEqual(result.body[i+1].score)
+            }else{
+                break;
+            }
+
+        }
+        expect(result.status).toBe(200)
+        expect(result.body.length).toEqual(amount)
+
         
     })
 })
