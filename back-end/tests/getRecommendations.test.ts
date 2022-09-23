@@ -26,18 +26,24 @@ describe("Test route GET /recommendations/:id", () => {
         const newSong = await createNewSong()
         await supertest(app).post('/recommendations').send(newSong);
         const createdSong = await prisma.recommendation.findUnique({where: {name:newSong.name}});
-        const { id } = createdSong
+        const  id  = createdSong.id
         const result = await supertest(app).get(`/recommendations/${id}`)
-
+        const resultExpect = {
+            id:id,
+            name:newSong.name,
+            score:createdSong.score,
+            youtubeLink:newSong.youtubeLink,
+        }
         expect(result.status).toBe(200)
+        expect(result.body).toEqual(resultExpect)
         
     })
 
     it("Trying to rReturning one recomendation, by invalid ID, return status 404",async () => {
         const newSong = await createNewSong()
         await supertest(app).post('/recommendations').send(newSong);
-        const result = await supertest(app).get(`/recommendations/2`)
-
+        const result = await supertest(app).get(`/recommendations/9999999`)
+        
         expect(result.status).toBe(404)
         
     })
